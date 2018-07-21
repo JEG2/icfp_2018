@@ -71,4 +71,5 @@ defmodule Nanobots.Trace do
   end
 
   def close(%__MODULE__{device: device}), do: File.close(device)
+  def close(_), do: nil
 end

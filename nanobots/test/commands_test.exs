@@ -6,12 +6,14 @@ defmodule CommandsTest do
     pos: {8, 15, 17},
     bid: 1,
     seeds: [2,3,4,5],
+    command: nil,
+    metadata: nil
   }
 
   test "wait command waits" do
     {:ok, results} = Commands.wait(@test_bot)
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :wait, metadata: %{}},
       volatile: [@test_bot.pos],
       bot_added: nil,
       bot_removed: nil,
@@ -24,7 +26,7 @@ defmodule CommandsTest do
   test "halt command halts" do
     {:ok, results} = Commands.halt(@test_bot)
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :halt, metadata: %{}},
       volatile: [@test_bot.pos],
       bot_added: nil,
       bot_removed: @test_bot,
@@ -37,7 +39,7 @@ defmodule CommandsTest do
   test "flip command flips" do
     {:ok, results} = Commands.flip(@test_bot)
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :flip, metadata: %{}},
       volatile: [@test_bot.pos],
       bot_added: nil,
       bot_removed: nil,
@@ -48,9 +50,13 @@ defmodule CommandsTest do
   end
 
   test "s_move does a move" do
-    {:ok, results} = Commands.s_move(@test_bot, {13, 0, 0})
+    {:ok, results} = Commands.s_move(@test_bot, lld = {13, 0, 0})
     assert results == %{
-      bot: %{@test_bot | pos: {21, 15, 17}},
+      bot: %{@test_bot |
+        pos: {21, 15, 17},
+        command: :s_move,
+        metadata: %{lld: lld}
+      },
       volatile: [
         @test_bot.pos,
         {9, 15, 17},
@@ -76,9 +82,16 @@ defmodule CommandsTest do
   end
 
   test "l move does a move" do
-    {:ok, results} = Commands.l_move(@test_bot, {4, 0, 0}, {0,0,3})
+    {:ok, results} = Commands.l_move(@test_bot, sld1 = {4, 0, 0}, sld2 = {0,0,3})
     assert results == %{
-      bot: %{@test_bot | pos: {12, 15, 20}},
+      bot: %{@test_bot |
+        pos: {12, 15, 20},
+        command: :l_move,
+        metadata: %{
+          sld1: sld1,
+          sld2: sld2
+        }
+      },
       volatile: [
         @test_bot.pos,
         {9, 15, 17},
@@ -98,9 +111,9 @@ defmodule CommandsTest do
   end
 
   test "fill {1,1,0}" do
-    {:ok, results } = Commands.fill(@test_bot, {1,1,0})
+    {:ok, results } = Commands.fill(@test_bot, nd = {1,1,0})
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :fill, metadata: %{nd: nd}},
       volatile: [
         @test_bot.pos,
         {9,16,17}
@@ -114,9 +127,9 @@ defmodule CommandsTest do
   end
 
   test "fill {1,0,1}" do
-    {:ok, results } = Commands.fill(@test_bot, {1,0,1})
+    {:ok, results } = Commands.fill(@test_bot, nd = {1,0,1})
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :fill, metadata: %{nd: nd}},
       volatile: [
         @test_bot.pos,
         {9,15,18}
@@ -130,9 +143,9 @@ defmodule CommandsTest do
   end
 
   test "fill {0,1,1}" do
-    {:ok, results } = Commands.fill(@test_bot, {0,1,1})
+    {:ok, results } = Commands.fill(@test_bot, nd = {0,1,1})
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :fill, metadata: %{nd: nd}},
       volatile: [
         @test_bot.pos,
         {8,16,18}
@@ -146,9 +159,9 @@ defmodule CommandsTest do
   end
 
   test "fill {-1,1,0}" do
-    {:ok, results } = Commands.fill(@test_bot, {-1,1,0})
+    {:ok, results } = Commands.fill(@test_bot, nd = {-1,1,0})
     assert results == %{
-      bot: @test_bot,
+      bot: %{@test_bot | command: :fill, metadata: %{nd: nd}},
       volatile: [
         @test_bot.pos,
         {7,16,17}
@@ -162,10 +175,23 @@ defmodule CommandsTest do
   end
 
   test "fission creates a new bot with a bid and seeds" do
-    {:ok, results} = Commands.fission(@test_bot, {0,-1,0}, 2)
+    {:ok, results} = Commands.fission(@test_bot, nd = {0,-1,0}, m = 2)
     assert results == %{
-      bot: %{@test_bot | seeds: [5]},
-      bot_added: %{bid: 2, pos: {8, 14, 17}, seeds: [3, 4]},
+      bot: %{@test_bot |
+        seeds: [5],
+        command: :fission,
+        metadata: %{
+          nd: nd,
+          m: m
+        }
+      },
+      bot_added: %{
+        bid: 2,
+        pos: {8, 14, 17},
+        seeds: [3, 4],
+        command: :new_from_fission,
+        metadata: %{}
+      },
       bot_removed: nil,
       energy: 24,
       fill: nil,
@@ -174,19 +200,53 @@ defmodule CommandsTest do
     }
   end
 
-  test "fusion removes bot2" do
+  test "fusion_p removes bot2" do
     {:ok, results} = Commands.fission(@test_bot, {0,-1,0}, 2)
     test_bot_1 = results.bot
     test_bot_2 = results.bot_added
-    {:ok, results} = Commands.fusion(test_bot_1, test_bot_2)
+    {:ok, results} = Commands.fusion_p(test_bot_1, test_bot_2)
     assert results == %{
-      bot: %{test_bot_1 | seeds: [2,3,4,5]},
+      bot: %{test_bot_1 |
+        seeds: [2,3,4,5],
+        command: :fusion_p,
+        metadata: %{
+          nd: {0,-1,0}
+        }
+      },
       bot_added: nil,
       bot_removed: test_bot_2,
       energy: -24,
       fill: nil,
       flip: false,
       volatile: [test_bot_1.pos, test_bot_2.pos]
+    }
+  end
+
+  # test "fusion_p rejects fusing bots that are too far apart" do
+  #   {:ok, results} = Commands.fission(@test_bot, {0,-1,0}, 2)
+  #   test_bot_1 = results.bot
+  #   test_bot_2 = results.bot_added
+  #   Commands.fusion_p(test_bot_1, %{test_bot_2 | pos: {200, 200, 200}})
+  # end
+
+  test "fusion_s" do
+    {:ok, results} = Commands.fission(@test_bot, {0,-1,0}, 2)
+    test_bot_1 = results.bot
+    test_bot_2 = results.bot_added
+    {:ok, results} = Commands.fusion_s(test_bot_2, test_bot_1)
+    assert results == %{
+      bot: %{test_bot_2 |
+        command: :fusion_s,
+        metadata: %{
+          nd: {0,1,0}
+        }
+      },
+      bot_added: nil,
+      bot_removed: nil,
+      energy: 0,
+      fill: nil,
+      flip: false,
+      volatile: [test_bot_2.pos, test_bot_1.pos]
     }
   end
 
@@ -212,5 +272,9 @@ defmodule CommandsTest do
       {0,4,0},
       {0,5,0},
     ]
+  end
+
+  test "coordinate_difference" do
+    assert Commands.coordinate_difference({1,1,1}, {1,1,2}) == {0,0,1}
   end
 end

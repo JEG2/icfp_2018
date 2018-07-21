@@ -8,7 +8,7 @@ defmodule Commands do
   """
   def wait(bot) do
     {:ok, %{
-      bot: bot,
+      bot: %{bot | command: :wait, metadata: %{}},
       volatile: [bot.pos],
       bot_added: nil,
       bot_removed: nil,
@@ -23,7 +23,7 @@ defmodule Commands do
   """
   def halt(bot) do
     {:ok, %{
-      bot: bot,
+      bot: %{bot | command: :halt, metadata: %{}},
       volatile: [bot.pos],
       bot_added: nil,
       bot_removed: bot,
@@ -35,7 +35,7 @@ defmodule Commands do
 
   def flip(bot) do
     {:ok, %{
-      bot: bot,
+      bot: %{bot | command: :flip, metadata: %{}},
       volatile: [bot.pos],
       bot_added: nil,
       bot_removed: nil,
@@ -47,7 +47,14 @@ defmodule Commands do
 
   def s_move(bot, lld) do
     {:ok, %{
-      bot: %{bot | pos: calculate_cprime(bot.pos, lld)}, volatile: calculate_volatile(bot.pos, lld),
+      bot: %{bot |
+        pos: calculate_cprime(bot.pos, lld),
+        command: :s_move,
+        metadata: %{
+          lld: lld
+        }
+      },
+      volatile: calculate_volatile(bot.pos, lld),
       bot_added: nil,
       bot_removed: nil,
       fill: nil,
@@ -60,7 +67,13 @@ defmodule Commands do
     {:ok, %{bot: first_move_bot, volatile: first_move_volatile}} = s_move(bot, sld1)
     {:ok, %{bot: final_bot, volatile: [_ | second_move_volatile]}} = s_move(first_move_bot, sld2)
     {:ok, %{
-      bot: final_bot,
+      bot: %{final_bot |
+        command: :l_move,
+        metadata: %{
+          sld1: sld1,
+          sld2: sld2
+        }
+      },
       volatile: first_move_volatile ++ second_move_volatile,
       bot_added: nil,
       bot_removed: nil,
@@ -86,7 +99,7 @@ defmodule Commands do
   defp do_fill(bot, nd) do
     filled = calculate_cprime(bot.pos, nd)
     {:ok, %{
-      bot: bot,
+      bot: %{bot | command: :fill, metadata: %{ nd: nd }},
       volatile: [bot.pos, filled],
       bot_added: nil,
       bot_removed: nil,
@@ -116,9 +129,18 @@ defmodule Commands do
       bid: new_bot_id,
       pos: new_bot_position,
       seeds: new_bot_seeds,
+      command: :new_from_fission,
+      metadata: %{}
     }
     {:ok, %{
-      bot: %{bot | seeds: bot.seeds -- ([new_bot.bid] ++ new_bot.seeds)},
+      bot: %{bot |
+        seeds: bot.seeds -- ([new_bot.bid] ++ new_bot.seeds),
+        command: :fission,
+        metadata: %{
+          nd: nd,
+          m: m
+        }
+      },
       volatile: [bot.pos, new_bot.pos],
       bot_added: new_bot,
       bot_removed: nil,
@@ -128,16 +150,48 @@ defmodule Commands do
     }}
   end
 
-  def fusion(bot1, bot2) do
-    # TODO: reject if chessboard distance is too great
+  def fusion_p(bot1, bot2) do
+    nd = coordinate_difference(bot1.pos, bot2.pos)
+    :ok = case mlen(nd) do
+      mlen when mlen in [1,2] -> :ok
+      _ -> {:error}
+    end
     {:ok, %{
-      bot: %{bot1 | seeds: Enum.sort(bot1.seeds ++ ([bot2.bid] ++ bot2.seeds))},
+      bot: %{bot1 |
+        seeds: Enum.sort(bot1.seeds ++ ([bot2.bid] ++ bot2.seeds)),
+        command: :fusion_p,
+        metadata: %{
+          nd: nd
+        }
+      },
       volatile: [bot1.pos, bot2.pos],
       bot_added: nil,
       bot_removed: bot2,
       fill: nil,
       flip: false,
       energy: -24
+    }}
+  end
+
+  def fusion_s(bot1, bot2) do
+    nd = coordinate_difference(bot1.pos, bot2.pos)
+    :ok = case mlen(nd) do
+      mlen when mlen in [1,2] -> :ok
+      _ -> {:error}
+    end
+    {:ok, %{
+      bot: %{bot1 |
+        command: :fusion_s,
+        metadata: %{
+          nd: nd
+        }
+      },
+      volatile: [bot1.pos, bot2.pos],
+      bot_added: nil,
+      bot_removed: nil,
+      fill: nil,
+      flip: false,
+      energy: 0
     }}
   end
 
@@ -166,5 +220,9 @@ defmodule Commands do
   def calculate_volatile(start, {0, 0, dz}, volatile) do
     next_step = calculate_cprime(start, {0, 0, 1})
     calculate_volatile(next_step, {0, 0, dz-1}, [next_step | volatile])
+  end
+
+  def coordinate_difference({ax, ay, az}, {bx, by, bz}) do
+    {bx - ax, by - ay, bz - az}
   end
 end

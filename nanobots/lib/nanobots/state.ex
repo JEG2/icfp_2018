@@ -1,7 +1,7 @@
 defmodule Nanobots.State do
   alias Nanobots.{Bot, Coord, Model, Trace}
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, GFill, Void, GVoid, Fission, FusionP, FusionS
   }
 
   defstruct energy: 0,
@@ -42,6 +42,7 @@ defmodule Nanobots.State do
   end
 
   def validate_commands(state, commands) do
+    # TODO: validate GFill/GVoid bot coordination
     length(state.bots) == length(commands) || raise "Wrong number of commands"
 
     Enum.count(commands, fn %Flip{ } -> true; _command -> false end) > 1 &&
@@ -116,6 +117,21 @@ defmodule Nanobots.State do
       energy: state.energy + 12
     }
   end
+  def apply_command(state, bot, %GFill{nd: nd, fd: fd}) when nd in @nds do
+    filled = Coord.garea(bot.pos, nd, fd)
+    energy = Enum.reduce(filled, state.energy, fn(voxel, total) ->
+      if Model.filled?(state.matrix, voxel) do
+        total + 6
+      else
+        total + 12
+      end
+    end)
+    %__MODULE__{
+      state |
+      matrix: Model.fill(state.matrix, filled),
+      energy: energy
+    }
+  end
   def apply_command(state, bot, %Void{nd: nd}) when nd in @nds do
     voided = Coord.calculate_cprime(bot.pos, nd)
 
@@ -127,6 +143,21 @@ defmodule Nanobots.State do
       state |
       matrix: Model.void(state.matrix, voided),
       energy: state.energy - 12
+    }
+  end
+  def apply_command(state, bot, %GVoid{nd: nd, fd: fd}) when nd in @nds do
+    filled = Coord.garea(bot.pos, nd, fd)
+    energy = Enum.reduce(filled, state.energy, fn(voxel, total) ->
+      if Model.filled?(state.matrix, voxel) do
+        total - 12
+      else
+        total + 3
+      end
+    end)
+    %__MODULE__{
+      state |
+      matrix: Model.void(state.matrix, filled),
+      energy: energy
     }
   end
   def apply_command(state, bot, %Fission{nd: nd, m: m}) when nd in @nds do

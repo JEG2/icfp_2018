@@ -37,10 +37,16 @@ defmodule Nanobots.Model do
     MapSet.member?(matrix, coord)
   end
 
+  def fill(%__MODULE__{matrix: matrix} = model, coords) when is_list coords do
+    %__MODULE__{model | matrix: MapSet.union(matrix, MapSet.new(coords))}
+  end
   def fill(%__MODULE__{matrix: matrix} = model, coord) do
     %__MODULE__{model | matrix: MapSet.put(matrix, coord)}
   end
 
+  def void(%__MODULE__{matrix: matrix} = model, coords) when is_list coords do
+    %__MODULE__{model | matrix: MapSet.difference(matrix, MapSet.new(coords))}
+  end
   def void(%__MODULE__{matrix: matrix} = model, coord) do
     %__MODULE__{model | matrix: MapSet.delete(matrix, coord)}
   end

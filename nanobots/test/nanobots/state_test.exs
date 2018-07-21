@@ -2,7 +2,7 @@ defmodule Nanobots.StateTest do
   use ExUnit.Case
   alias Nanobots.{Bot, State, Model}
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, GFill, Void, GVoid, Fission, FusionP, FusionS
   }
 
   describe "applying commands to a state" do
@@ -118,6 +118,37 @@ defmodule Nanobots.StateTest do
     end
   end
 
+  describe "applying the GFill command" do
+    test "fills the voxels" do
+      bot = %Bot{pos: {8,15,17}}
+      state = %State{bots: [bot], matrix: %Model{matrix: MapSet.new}}
+      new_state = State.apply_command(state, bot, %GFill{nd: {1,0,0}, fd: {3,0,0}})
+      assert new_state.matrix.matrix == MapSet.new([{9, 15, 17}, {10, 15, 17}, {11, 15, 17}])
+    end
+
+    test "updates the energy" do
+      bot = %Bot{pos: {8,15,17}}
+      energy = 17
+      state = %State{bots: [bot], energy: energy, matrix: %Model{matrix: MapSet.new}}
+      new_state = State.apply_command(state, bot, %GFill{nd: {1,0,0}, fd: {3,0,0}})
+      assert new_state.energy == energy + (3 * 12)
+    end
+
+    test "updates the energy when one voxel is already filled" do
+      bot = %Bot{pos: {8,15,17}}
+      energy = 90
+      state = %State{
+        bots: [bot],
+        energy: energy,
+        matrix: %Model{
+          matrix: MapSet.new([{9, 15, 17}])
+        }
+      }
+      new_state = State.apply_command(state, bot, %GFill{nd: {1,0,0}, fd: {3,0,0}})
+      assert new_state.energy == energy + (2 * 12) + (1 * 6)
+    end
+  end
+
   describe "applying the Void command" do
     test "voids the voxel" do
       bot = %Bot{pos: {8,15,17}}
@@ -137,8 +168,50 @@ defmodule Nanobots.StateTest do
       bot = %Bot{pos: {8,15,17}}
       state = %State{bots: [bot], matrix: %Model{matrix: MapSet.new}}
       assert_raise(RuntimeError, "Already void", fn -> {
-        new_state = State.apply_command(state, bot, %Void{nd: {-1,-1,0}})
+        State.apply_command(state, bot, %Void{nd: {-1,-1,0}})
       } end)
+    end
+  end
+
+  describe "applying the GVoid command" do
+    test "voids the voxels" do
+      bot = %Bot{pos: {8,15,17}}
+      state = %State{
+        bots: [bot],
+        matrix: %Model{
+          matrix: MapSet.new([{9, 15, 17}, {10, 15, 17}, {11, 15, 17}])
+        }
+      }
+      new_state = State.apply_command(state, bot, %GVoid{nd: {1,0,0}, fd: {3,0,0}})
+      assert new_state.matrix.matrix == MapSet.new([])
+    end
+
+    test "updates the energy" do
+      bot = %Bot{pos: {8,15,17}}
+      energy = 90
+      state = %State{
+        bots: [bot],
+        energy: energy,
+        matrix: %Model{
+          matrix: MapSet.new([{9, 15, 17}, {10, 15, 17}, {11, 15, 17}])
+        }
+      }
+      new_state = State.apply_command(state, bot, %GVoid{nd: {1,0,0}, fd: {3,0,0}})
+      assert new_state.energy == energy - (3 * 12)
+    end
+
+    test "updates the energy when one is already void" do
+      bot = %Bot{pos: {8,15,17}}
+      energy = 90
+      state = %State{
+        bots: [bot],
+        energy: energy,
+        matrix: %Model{
+          matrix: MapSet.new([{9, 15, 17}, {10, 15, 17}])
+        }
+      }
+      new_state = State.apply_command(state, bot, %GVoid{nd: {1,0,0}, fd: {3,0,0}})
+      assert new_state.energy == energy - (2 * 12) + (1 * 3)
     end
   end
 

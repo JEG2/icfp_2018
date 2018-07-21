@@ -96,7 +96,6 @@ defmodule Nanobots.Commands do
     end
   end
 
-
   defmodule Fission do
     defstruct ~w[nd m volatiles]a
 

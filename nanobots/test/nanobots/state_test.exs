@@ -2,7 +2,7 @@ defmodule Nanobots.StateTest do
   use ExUnit.Case
   alias Nanobots.{Bot, State, Model}
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS
   }
 
   describe "applying the Halt command" do
@@ -96,6 +96,30 @@ defmodule Nanobots.StateTest do
       state = %State{bots: [bot], matrix: %Model{matrix: MapSet.new([{7,14,17}])}}
       assert_raise(RuntimeError, "Already filled", fn -> {
         State.apply_command(state, bot, %Fill{nd: {-1,-1,0}})
+      } end)
+    end
+  end
+
+  describe "applying the Void command" do
+    test "voids the voxel" do
+      bot = %Bot{pos: {8,15,17}}
+      state = %State{bots: [bot], matrix: %Model{matrix: MapSet.new([{7,14,17}])}}
+      new_state = State.apply_command(state, bot, %Void{nd: {-1,-1,0}})
+      assert MapSet.member?(new_state.matrix.matrix, {4,14,17}) == false
+    end
+
+    test "updates the energy" do
+      bot = %Bot{pos: {8,15,17}}
+      state = %State{bots: [bot], matrix: %Model{matrix: MapSet.new([{7,14,17}])}}
+      new_state = State.apply_command(state, bot, %Void{nd: {-1,-1,0}})
+      assert new_state.energy == state.energy - 12
+    end
+
+    test "raises if already void" do
+      bot = %Bot{pos: {8,15,17}}
+      state = %State{bots: [bot], matrix: %Model{matrix: MapSet.new}}
+      assert_raise(RuntimeError, "Already void", fn -> {
+        new_state = State.apply_command(state, bot, %Void{nd: {-1,-1,0}})
       } end)
     end
   end

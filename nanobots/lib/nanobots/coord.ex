@@ -7,10 +7,6 @@ defmodule Nanobots.Coord do
     abs(x) + abs(y) + abs(z)
   end
 
-  def difference({ax, ay, az}, {bx  , by  , bz  }) do
-    {bx - ax  , by - ay  , bz - az  }
-  end
-
   def closest({x, y, z}, layer) do
   end
 
@@ -38,6 +34,18 @@ defmodule Nanobots.Coord do
   end
 
   def to_d({src_x, src_y, src_z}, {dst_x, dst_y, dst_z}) do
-    {abs(dest_x - src_x), abs(dst_y - src_y), abs(dst_z - src_z)}
+    {abs(dst_x - src_x), abs(dst_y - src_y), abs(dst_z - src_z)}
+  end
+
+  def clen({x, y, z}) do
+    Enum.max([abs(x), abs(y), abs(z)])
+  end
+
+  def difference({ax, ay, az}, {bx, by, bz}) do
+    {bx - ax, by - ay, bz - az}
+  end
+
+  def valid_fd?(fd) do
+    0 < clen(fd) && clen(fd) <=30
   end
 end

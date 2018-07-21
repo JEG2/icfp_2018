@@ -38,7 +38,7 @@ defmodule Nanobots.State do
 
     Trace.record_timestep(state.trace, commands)
 
-    new_state
+    %{new_state | energy: new_state.energy + calculate_harmonics_energy(state)}
   end
 
   def validate_commands(state, commands) do
@@ -180,5 +180,14 @@ defmodule Nanobots.State do
 
   defp remove_bot(bots, bot) do
     List.delete(bots, bot)
+  end
+
+  defp calculate_harmonics_energy(state = %__MODULE__{harmonics: :low}) do
+    r = state.matrix.resolution
+    3 * r * r * r
+  end
+  defp calculate_harmonics_energy(state = %__MODULE__{harmonics: :high}) do
+    r = state.matrix.resolution
+    30 * r * r * r
   end
 end

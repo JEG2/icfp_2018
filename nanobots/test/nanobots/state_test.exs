@@ -5,6 +5,24 @@ defmodule Nanobots.StateTest do
     Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS
   }
 
+  describe "applying commands to a state" do
+    test "low harmonics increases state energy by 3 * r^3" do
+      r = 4
+      harmonics = :low
+      state = %State{harmonics: harmonics, matrix: %Model{matrix: MapSet.new, resolution: r}}
+      updated_state = State.apply(state, [%Wait{}])
+      assert updated_state.energy == 3 * r * r * r
+    end
+
+    test "high harmonics increases state energy by 30 * r^3" do
+      r = 4
+      harmonics = :high
+      state = %State{harmonics: harmonics, matrix: %Model{matrix: MapSet.new, resolution: r}}
+      updated_state = State.apply(state, [%Wait{}])
+      assert updated_state.energy == 30 * r * r * r
+    end
+  end
+
   describe "applying the Halt command" do
     test "removes last bot at {0,0,0}" do
       state = %State{}

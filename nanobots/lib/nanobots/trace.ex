@@ -37,6 +37,7 @@ defmodule Nanobots.Trace do
       IO.binwrite(device, encoded)
     end)
   end
+  def record_timestep(_trace, _commands), do: nil
 
   defp encode_command(%Halt{ }), do: <<0b11111111>>
   defp encode_command(%Wait{ }), do: <<0b11111110>>

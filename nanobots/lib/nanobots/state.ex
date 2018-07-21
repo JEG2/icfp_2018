@@ -65,7 +65,7 @@ defmodule Nanobots.State do
   def apply_command(
     %__MODULE__{
       harmonics: :low,
-      bots: [%Bot{pos: {0, 0, 0} = bot}]
+      bots: [%Bot{pos: {0, 0, 0}} = bot]
     } = state,
     bot,
     %Halt{ }

@@ -42,7 +42,6 @@ defmodule Nanobots.State do
   end
 
   def validate_commands(state, commands) do
-    # TODO: validate GFill/GVoid bot coordination
     length(state.bots) == length(commands) || raise "Wrong number of commands"
 
     Enum.count(commands, fn %Flip{ } -> true; _command -> false end) > 1 &&
@@ -61,6 +60,9 @@ defmodule Nanobots.State do
       end) == 1
     end) ||
       raise "Mismatched fusion"
+
+    validate_gfill_commands(state, commands)
+    validate_gvoid_commands(state, commands)
   end
 
   def apply_command(
@@ -220,5 +222,52 @@ defmodule Nanobots.State do
   defp calculate_harmonics_energy(state = %__MODULE__{harmonics: :high}) do
     r = state.matrix.resolution
     30 * r * r * r
+  end
+
+  defp validate_gfill_commands(state, commands) do
+    state.bots
+    |> Enum.zip(commands)
+    |> Enum.filter(fn
+      {_bot, %Nanobots.Commands.GFill{}} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {bot, command} ->
+      %{
+        dimension: Coord.garea_dimensions(command.nd, command.fd),
+        garea: MapSet.new(Coord.garea(bot.pos, command.nd, command.fd))
+      }
+    end)
+    |> validate_g_commands
+  end
+
+  defp validate_gvoid_commands(state, commands) do
+    state.bots
+    |> Enum.zip(commands)
+    |> Enum.filter(fn
+      {_bot, %Nanobots.Commands.GVoid{}} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {bot, command} ->
+      %{
+        dimension: Coord.garea_dimensions(command.nd, command.fd),
+        garea: MapSet.new(Coord.garea(bot.pos, command.nd, command.fd))
+      }
+    end)
+    |> validate_g_commands
+  end
+
+  defp validate_g_commands([]) do
+    true
+  end
+  defp validate_g_commands([first | rest]) do
+    expected_other_commands_length = :math.pow(2, first.dimension) - 1
+    matching_other_commands = Enum.filter(rest, fn data ->
+      MapSet.equal?(first.garea, data.garea)
+    end)
+    unless expected_other_commands_length == length(matching_other_commands) do
+      raise "g command has invalid number of coordinated bots"
+    end
+
+    validate_g_commands(rest |> Enum.reject(fn data -> MapSet.equal?(first.garea, data.garea) end))
   end
 end

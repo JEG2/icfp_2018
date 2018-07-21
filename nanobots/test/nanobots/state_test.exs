@@ -296,5 +296,60 @@ defmodule Nanobots.StateTest do
       assert State.end?(state) == false
     end
   end
+
+  describe "validation of GFill and GVoid commands" do
+    test "allows valid GFill of one dimension" do
+      state = %State{
+        bots: [%Bot{bid: 1, pos: {1,1,1}}, %Bot{bid: 2, pos: {7,1,1}}],
+        matrix: %Model{matrix: MapSet.new()}
+      }
+      commands = [
+        %GFill{nd: {1,0,0}, fd: {5,0,0}},
+        %GFill{nd: {-1,0,0}, fd: {-5,0,0}},
+      ]
+      State.validate_commands(state, commands)
+    end
+
+    test "rejects invalid GFill of one dimension" do
+      state = %State{
+        bots: [%Bot{bid: 1, pos: {1,1,1}}, %Bot{bid: 2, pos: {7,1,1}}],
+        matrix: %Model{matrix: MapSet.new()}
+      }
+      commands = [
+        %GFill{nd: {1,0,0}, fd: {5,0,0}},
+        %GFill{nd: {0,0,1}, fd: {-5,0,0}},
+      ]
+
+      assert_raise(RuntimeError, "g command has invalid number of coordinated bots", fn ->
+        State.validate_commands(state, commands)
+      end)
+    end
+
+    test "allows valid GVoid of one dimension" do
+      state = %State{
+        bots: [%Bot{bid: 1, pos: {1,1,1}}, %Bot{bid: 2, pos: {7,1,1}}],
+        matrix: %Model{matrix: MapSet.new()}
+      }
+      commands = [
+        %GVoid{nd: {1,0,0}, fd: {5,0,0}},
+        %GVoid{nd: {-1,0,0}, fd: {-5,0,0}},
+      ]
+      State.validate_commands(state, commands)
+    end
+
+    test "rejects paired GFill and GVoid commands" do
+      state = %State{
+        bots: [%Bot{bid: 1, pos: {1,1,1}}, %Bot{bid: 2, pos: {7,1,1}}],
+        matrix: %Model{matrix: MapSet.new()}
+      }
+      commands = [
+        %GVoid{nd: {1,0,0}, fd: {5,0,0}},
+        %GFill{nd: {-1,0,0}, fd: {-5,0,0}},
+      ]
+      assert_raise(RuntimeError, "g command has invalid number of coordinated bots", fn ->
+        State.validate_commands(state, commands)
+      end)
+    end
+  end
 end
 

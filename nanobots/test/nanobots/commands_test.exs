@@ -124,7 +124,6 @@ defmodule Nanobots.CommandsTest do
     test "returns struct with nd, volatiles" do
       start = {8,15,17}
       nd = {1,0,0}
-      c_prime = {9,15,17}
       result = FusionS.from_bot(%Bot{pos: start}, nd)
       assert result.nd == nd
       assert result.volatiles == MapSet.new

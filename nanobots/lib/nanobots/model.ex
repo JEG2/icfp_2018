@@ -40,4 +40,8 @@ defmodule Nanobots.Model do
   def fill(%__MODULE__{matrix: matrix} = model, coord) do
     %__MODULE__{model | matrix: MapSet.put(matrix, coord)}
   end
+
+  def void(%__MODULE__{matrix: matrix} = model, coord) do
+    %__MODULE__{model | matrix: MapSet.delete(matrix, coord)}
+  end
 end

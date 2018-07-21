@@ -85,6 +85,18 @@ defmodule Nanobots.Commands do
     end
   end
 
+  defmodule Void do
+    defstruct ~w[nd volatiles]a
+
+    def from_bot(%Bot{pos: pos}, nd) do
+      %__MODULE__{
+        nd: nd,
+        volatiles: MapSet.new([pos, Coord.calculate_cprime(pos, nd)])
+      }
+    end
+  end
+
+
   defmodule Fission do
     defstruct ~w[nd m volatiles]a
 

@@ -1,7 +1,7 @@
 defmodule Nanobots.CommandsTest do
   use ExUnit.Case
   alias Nanobots.Bot
-  alias Nanobots.Commands.{Halt, Wait, Flip, SMove, LMove, Fill, Fission, FusionP, FusionS}
+  alias Nanobots.Commands.{Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS}
 
   describe "Halt.from_bot" do
     test "returns a struct with volatiles" do
@@ -80,6 +80,17 @@ defmodule Nanobots.CommandsTest do
       nd = {1,0,0}
       c_prime = {9,15,17}
       result = Fill.from_bot(%Bot{pos: start}, nd)
+      assert result.nd == nd
+      assert result.volatiles == MapSet.new([start, c_prime])
+    end
+  end
+
+  describe "Void.from_bot" do
+    test "returns struct with nd, volatiles" do
+      start = {8,15,17}
+      nd = {1,0,0}
+      c_prime = {9,15,17}
+      result = Void.from_bot(%Bot{pos: start}, nd)
       assert result.nd == nd
       assert result.volatiles == MapSet.new([start, c_prime])
     end

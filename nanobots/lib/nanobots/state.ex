@@ -1,7 +1,7 @@
 defmodule Nanobots.State do
   alias Nanobots.{Bot, Coord, Model, Trace}
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS
   }
 
   defstruct energy: 0,
@@ -114,6 +114,19 @@ defmodule Nanobots.State do
       state |
       matrix: Model.fill(state.matrix, filled),
       energy: state.energy + 12
+    }
+  end
+  def apply_command(state, bot, %Void{nd: nd}) when nd in @nds do
+    voided = Coord.calculate_cprime(bot.pos, nd)
+
+    if !Model.filled?(state.matrix, voided) do
+      raise "Already void"
+    end
+
+    %__MODULE__{
+      state |
+      matrix: Model.void(state.matrix, voided),
+      energy: state.energy - 12
     }
   end
   def apply_command(state, bot, %Fission{nd: nd, m: m}) when nd in @nds do

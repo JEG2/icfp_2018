@@ -61,4 +61,9 @@ defmodule Nanobots.Coord do
       {x, y, z}
     end
   end
+
+  def garea_dimensions({nx, ny, nz}, {fx, fy, fz}) do
+    Enum.zip([nx, ny, nz], [fx, fy, fz])
+    |> Enum.reduce(0, fn ({a,a}, dimensions) -> dimensions; (_, dimensions) -> dimensions + 1 end)
+  end
 end

@@ -82,4 +82,22 @@ defmodule Nanobots.CoordTest do
       {4,2,4},
     ]
   end
+
+  test "determine dimensions of a line" do
+    near = {2,2,2}
+    far = {3,2,2}
+    assert Coord.garea_dimensions(near, far) == 1
+  end
+
+  test "determine dimensions of a rectangle" do
+    near = {2,2,2}
+    far = {3,3,2}
+    assert Coord.garea_dimensions(near, far) == 2
+  end
+
+  test "determine dimensions of a box" do
+    near = {2,2,2}
+    far = {3,3,3}
+    assert Coord.garea_dimensions(near, far) == 3
+  end
 end

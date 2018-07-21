@@ -6,4 +6,8 @@ defmodule Nanobots.Coord do
   def mlen({x, y, z}) do
     abs(x) + abs(y) + abs(z)
   end
+
+  def difference({ax, ay, az}, {bx, by, bz}) do
+    {bx - ax, by - ay, bz - az}
+  end
 end

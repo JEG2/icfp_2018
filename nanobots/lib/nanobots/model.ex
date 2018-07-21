@@ -32,4 +32,12 @@ defmodule Nanobots.Model do
       |> MapSet.new
     %__MODULE__{resolution: resolution, matrix: matrix}
   end
+
+  def filled?(%__MODULE__{matrix: matrix}, coord) do
+    MapSet.member?(matrix, coord)
+  end
+
+  def fill(%__MODULE__{matrix: matrix} = model, coord) do
+    %__MODULE__{model | matrix: MapSet.put(matrix, coord)}
+  end
 end

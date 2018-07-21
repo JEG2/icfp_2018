@@ -38,4 +38,48 @@ defmodule Nanobots.CoordTest do
     refute Coord.valid_fd?({-31,0,30})
     refute Coord.valid_fd?({40,0,0})
   end
+
+  test "calculate garea of a straight line" do
+    assert Coord.garea({1,2,3}, {1,0,0}, {5,0,0}) == [
+      {2,2,3},
+      {3,2,3},
+      {4,2,3},
+      {5,2,3},
+      {6,2,3},
+    ]
+
+    assert Coord.garea({30,40,50}, {0,-1,0}, {0,-3,0}) == [
+      {30,39,50},
+      {30,38,50},
+      {30,37,50},
+    ]
+  end
+
+  test "calculate garea of a plane" do
+    assert Coord.garea({1,2,3}, {1,1,0}, {3,0,0}) == [
+      {2,3,3},
+      {2,2,3},
+      {3,3,3},
+      {3,2,3},
+      {4,3,3},
+      {4,2,3}
+    ]
+  end
+
+  test "calculate garea of a box" do
+    assert Coord.garea({1,2,3}, {1,1,0}, {3,0,1}) == [
+      {2,3,3},
+      {2,3,4},
+      {2,2,3},
+      {2,2,4},
+      {3,3,3},
+      {3,3,4},
+      {3,2,3},
+      {3,2,4},
+      {4,3,3},
+      {4,3,4},
+      {4,2,3},
+      {4,2,4},
+    ]
+  end
 end

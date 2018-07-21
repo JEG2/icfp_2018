@@ -7,7 +7,15 @@ defmodule Nanobots.Coord do
     abs(x) + abs(y) + abs(z)
   end
 
+  def clen({x, y, z}) do
+    Enum.max([abs(x), abs(y), abs(z)])
+  end
+
   def difference({ax, ay, az}, {bx, by, bz}) do
     {bx - ax, by - ay, bz - az}
+  end
+
+  def valid_fd?(fd) do
+    0 < clen(fd) && clen(fd) <=30
   end
 end

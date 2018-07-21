@@ -157,7 +157,7 @@ defmodule Nanobots.State do
       bots:
         state.bots
         |> replace_bot(
-          %Bot{bot | seeds: bot.seeds ++ [other_bot.bid] ++ other_bot.seeds}
+          %Bot{bot | seeds: Enum.sort(bot.seeds ++ [other_bot.bid] ++ other_bot.seeds)}
         )
         |> remove_bot(other_bot),
       energy: state.energy - 24

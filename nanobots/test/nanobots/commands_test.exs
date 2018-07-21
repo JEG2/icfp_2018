@@ -1,7 +1,7 @@
 defmodule Nanobots.CommandsTest do
   use ExUnit.Case
   alias Nanobots.Bot
-  alias Nanobots.Commands.{Halt, Wait, Flip, SMove, LMove, Fill, Void, Fission, FusionP, FusionS}
+  alias Nanobots.Commands.{Halt, Wait, Flip, SMove, LMove, Fill, GFill, Void, GVoid, Fission, FusionP, FusionS}
 
   describe "Halt.from_bot" do
     test "returns a struct with volatiles" do
@@ -85,6 +85,23 @@ defmodule Nanobots.CommandsTest do
     end
   end
 
+  describe "GFill.from_bot" do
+    test "returns struct with nd, fd, volatiles" do
+      start = {8,15,17}
+      nd = {1,0,0}
+      fd = {3,0,0}
+      result = GFill.from_bot(%Bot{pos: start}, nd, fd)
+      assert result.nd == nd
+      assert result.fd == fd
+      assert result.volatiles == MapSet.new([
+        {8, 15, 17},
+        {9, 15, 17},
+        {10, 15, 17},
+        {11, 15, 17}
+      ])
+    end
+  end
+
   describe "Void.from_bot" do
     test "returns struct with nd, volatiles" do
       start = {8,15,17}
@@ -93,6 +110,23 @@ defmodule Nanobots.CommandsTest do
       result = Void.from_bot(%Bot{pos: start}, nd)
       assert result.nd == nd
       assert result.volatiles == MapSet.new([start, c_prime])
+    end
+  end
+
+  describe "GVoid.from_bot" do
+    test "returns struct with nd, fd, volatiles" do
+      start = {8,15,17}
+      nd = {1,0,0}
+      fd = {3,0,0}
+      result = GVoid.from_bot(%Bot{pos: start}, nd, fd)
+      assert result.nd == nd
+      assert result.fd == fd
+      assert result.volatiles == MapSet.new([
+        {8, 15, 17},
+        {9, 15, 17},
+        {10, 15, 17},
+        {11, 15, 17}
+      ])
     end
   end
 

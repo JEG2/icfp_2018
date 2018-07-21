@@ -85,6 +85,18 @@ defmodule Nanobots.Commands do
     end
   end
 
+  defmodule GFill do
+    defstruct ~w[nd fd volatiles]a
+
+    def from_bot(%Bot{pos: pos}, nd, fd) do
+      %__MODULE__{
+        nd: nd,
+        fd: fd,
+        volatiles: MapSet.new([pos | Coord.garea(pos, nd, fd)])
+      }
+    end
+  end
+
   defmodule Void do
     defstruct ~w[nd volatiles]a
 
@@ -92,6 +104,18 @@ defmodule Nanobots.Commands do
       %__MODULE__{
         nd: nd,
         volatiles: MapSet.new([pos, Coord.calculate_cprime(pos, nd)])
+      }
+    end
+  end
+
+  defmodule GVoid do
+    defstruct ~w[nd fd volatiles]a
+
+    def from_bot(%Bot{pos: pos}, nd, fd) do
+      %__MODULE__{
+        nd: nd,
+        fd: fd,
+        volatiles: MapSet.new([pos | Coord.garea(pos, nd, fd)])
       }
     end
   end

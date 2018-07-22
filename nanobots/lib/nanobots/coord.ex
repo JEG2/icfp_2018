@@ -74,7 +74,7 @@ defmodule Nanobots.Coord do
 
   def garea(start, near, far) when near in @nds do
     {nx, ny, nz} = calculate_cprime(start, near)
-    {fx, fy, fz} = calculate_cprime(start, far)
+    {fx, fy, fz} = calculate_cprime({nx, ny, nz}, far)
     for x <- nx..fx, y <- ny..fy, z <- nz..fz do
       {x, y, z}
     end

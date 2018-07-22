@@ -53,7 +53,7 @@ defmodule Nanobots.Model do
 
   def y_layer(%__MODULE__{matrix: matrix}, y) do
     matrix
-    |> Enum.filter(fn {_x, ^y, _z} -> true; xyz -> false end)
+    |> Enum.filter(fn {_x, ^y, _z} -> true; _ -> false end)
     |> MapSet.new
   end
 end

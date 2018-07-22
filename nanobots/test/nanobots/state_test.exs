@@ -11,7 +11,7 @@ defmodule Nanobots.StateTest do
       harmonics = :low
       state = %State{harmonics: harmonics, matrix: %Model{matrix: MapSet.new, resolution: r}}
       updated_state = State.apply(state, [%Wait{}])
-      assert updated_state.energy == 3 * r * r * r
+      assert updated_state.energy == (3 * r * r * r) + (20 * length(state.bots))
     end
 
     test "high harmonics increases state energy by 30 * r^3" do
@@ -19,7 +19,7 @@ defmodule Nanobots.StateTest do
       harmonics = :high
       state = %State{harmonics: harmonics, matrix: %Model{matrix: MapSet.new, resolution: r}}
       updated_state = State.apply(state, [%Wait{}])
-      assert updated_state.energy == 30 * r * r * r
+      assert updated_state.energy == (30 * r * r * r) + (20 * length(state.bots))
     end
   end
 

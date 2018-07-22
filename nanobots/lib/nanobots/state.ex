@@ -74,22 +74,22 @@ defmodule Nanobots.State do
     Enum.count(commands, fn %Flip{ } -> true; _command -> false end) > 1 &&
       raise "Multiple flips"
 
-    bots_with_commands = Enum.zip(state.bots, commands)
-    fusion_ps = Enum.filter(
-      bots_with_commands,
-      fn {_p_bot, %FusionP{ }} -> true; _command -> false end
-    )
-    Enum.all?(fusion_ps, fn {p_bot, %FusionP{nd: p_nd}} ->
-      s_pos = Coord.calculate_cprime(p_bot.pos, p_nd)
-      Enum.count(bots_with_commands, fn {s_bot, %FusionS{nd: s_nd}} ->
-        s_bot.pos == s_pos &&
-          Coord.calculate_cprime(s_bot.pos, s_nd) == p_bot.pos
-      end) == 1
-    end) ||
-      raise "Mismatched fusion"
+    # bots_with_commands = Enum.zip(state.bots, commands)
+    # fusion_ps = Enum.filter(
+    #   bots_with_commands,
+    #   fn {_p_bot, %FusionP{ }} -> true; _command -> false end
+    # )
+    # Enum.all?(fusion_ps, fn {p_bot, %FusionP{nd: p_nd}} ->
+    #   s_pos = Coord.calculate_cprime(p_bot.pos, p_nd)
+    #   Enum.count(bots_with_commands, fn {s_bot, %FusionS{nd: s_nd}} ->
+    #     s_bot.pos == s_pos &&
+    #       Coord.calculate_cprime(s_bot.pos, s_nd) == p_bot.pos
+    #   end) == 1
+    # end) ||
+    #   raise "Mismatched fusion"
 
-    validate_gfill_commands(state, commands)
-    validate_gvoid_commands(state, commands)
+    # validate_gfill_commands(state, commands)
+    # validate_gvoid_commands(state, commands)
   end
 
   def apply_command(

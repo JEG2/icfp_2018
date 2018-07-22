@@ -39,6 +39,7 @@ defmodule Nanobots.State do
     Trace.record_timestep(state.trace, commands)
 
     if end?(new_state) do
+      Trace.close(state.trace)
       new_state
     else
       %{
@@ -80,7 +81,6 @@ defmodule Nanobots.State do
     bot,
     %Halt{ }
   ) do
-    Trace.close(state.trace)
     %__MODULE__{state | bots: [ ]}
   end
   def apply_command(state, _bot, %Wait{ }) do

@@ -50,4 +50,10 @@ defmodule Nanobots.Model do
   def void(%__MODULE__{matrix: matrix} = model, coord) do
     %__MODULE__{model | matrix: MapSet.delete(matrix, coord)}
   end
+
+  def y_layer(%__MODULE__{matrix: matrix}, y) do
+    matrix
+    |> Enum.filter(fn {_x, ^y, _z} -> true; xyz -> false end)
+    |> MapSet.new
+  end
 end

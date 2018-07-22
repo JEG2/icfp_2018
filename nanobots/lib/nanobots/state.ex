@@ -38,7 +38,14 @@ defmodule Nanobots.State do
 
     Trace.record_timestep(state.trace, commands)
 
-    %{new_state | energy: new_state.energy + calculate_harmonics_energy(state)}
+    if end?(new_state) do
+      new_state
+    else
+      %{
+        new_state |
+        energy: new_state.energy + calculate_harmonics_energy(state)
+      }
+    end
   end
 
   def validate_commands(state, commands) do
@@ -170,7 +177,7 @@ defmodule Nanobots.State do
       pos: new_bot_position,
       seeds: new_bot_seeds
     }
-    %__MODULE__{
+   %__MODULE__{
       state |
       bots:
         state.bots
@@ -190,7 +197,10 @@ defmodule Nanobots.State do
       bots:
         state.bots
         |> replace_bot(
-          %Bot{bot | seeds: Enum.sort(bot.seeds ++ [other_bot.bid] ++ other_bot.seeds)}
+          %Bot{
+            bot |
+            seeds: Enum.sort(bot.seeds ++ [other_bot.bid] ++ other_bot.seeds)
+          }
         )
         |> remove_bot(other_bot),
       energy: state.energy - 24
@@ -218,10 +228,16 @@ defmodule Nanobots.State do
   defp calculate_harmonics_energy(state = %__MODULE__{harmonics: :low}) do
     r = state.matrix.resolution
     3 * r * r * r
+    |> add_robot_energy(state)
   end
   defp calculate_harmonics_energy(state = %__MODULE__{harmonics: :high}) do
     r = state.matrix.resolution
     30 * r * r * r
+    |> add_robot_energy(state)
+  end
+
+  defp add_robot_energy(energy, state) do
+    energy + 20 * length(state.bots)
   end
 
   defp validate_gfill_commands(state, commands) do

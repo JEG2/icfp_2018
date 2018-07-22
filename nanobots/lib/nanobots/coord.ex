@@ -12,10 +12,15 @@ defmodule Nanobots.Coord do
     abs(x) + abs(y) + abs(z)
   end
 
-  def closest({x, y, z}, layer) do
+  def closest(xyz, voxels) do
+    voxels
+    |> Enum.map(fn voxel -> {xyz |> to_d(voxel) |> mlen, voxel} end)
+    |> Enum.sort
+    |> hd
+    |> elem(1)
   end
 
-  def near_goal({x, y, z}) do
+  def near({x, y, z}, resolution) do
     [
       {x - 1, y - 1, z    },
       {x - 1, y    , z - 1},
@@ -36,6 +41,7 @@ defmodule Nanobots.Coord do
       {x + 1, y    , z + 1},
       {x + 1, y + 1, z    }
     ]
+    |> Enum.filter(&valid?(&1, resolution))
   end
 
   def to_d({src_x, src_y, src_z}, {dst_x, dst_y, dst_z}) do
@@ -64,6 +70,37 @@ defmodule Nanobots.Coord do
 
   def garea_dimensions({nx, ny, nz}, {fx, fy, fz}) do
     Enum.zip([nx, ny, nz], [fx, fy, fz])
-    |> Enum.reduce(0, fn ({a,a}, dimensions) -> dimensions; (_, dimensions) -> dimensions + 1 end)
+    |> Enum.reduce(0, fn ({a,a}, dimensions) ->
+      dimensions; (_, dimensions) -> dimensions + 1
+    end)
+  end
+
+  def valid?({x, y, z}, resolution) do
+    x >= 0 and x < resolution and
+    y >= 0 and y < resolution and
+    z >= 0 and z < resolution
+  end
+
+  def moves({x, y, z}, matrix, unavailable) do
+    [
+      {-1, 0, 0},
+      {1, 0, 0},
+      {0, -1, 0},
+      {0, 1, 0},
+      {0, 0, -1},
+      {0, 0, 1}
+    ]
+    |> Enum.flat_map(fn {dx, dy, dz} ->
+      Enum.reduce_while(1..15, [ ], fn i, voxels ->
+        xyz = {x + dx * i, y + dy * i, z + dz * i}
+        if valid?(xyz, matrix.resolution) and
+           not MapSet.member?(matrix.matrix, xyz) and
+           not MapSet.member?(unavailable, xyz) do
+          {:cont, [xyz | voxels]}
+        else
+          {:halt, voxels}
+        end
+      end)
+    end)
   end
 end

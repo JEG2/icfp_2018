@@ -1,6 +1,6 @@
 defmodule Nanobots.Trace do
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, Void, GFill, GVoid, Fission, FusionP, FusionS
   }
 
   defstruct ~w[device]a
@@ -70,6 +70,22 @@ defmodule Nanobots.Trace do
     nd = dx_dy_dz_to_nd(dx_dy_dz)
     <<nd::size(5), 0b011::size(3)>>
   end
+  defp encode_command(%Void{nd: dx_dy_dz}) do
+    nd = dx_dy_dz_to_nd(dx_dy_dz)
+    <<nd::size(5), 0b010::size(3)>>
+  end
+  defp encode_command(%GFill{nd: dx_dy_dz, fd: fd}) do
+    nd = dx_dy_dz_to_nd(dx_dy_dz)
+    {fx, fy, fz} = binary_fd(fd)
+    << nd::size(5), 0b001::size(3),
+       fx::size(8), fy::size(8), fz::size(8) >>
+  end
+  defp encode_command(%GVoid{nd: dx_dy_dz, fd: fd}) do
+    nd = dx_dy_dz_to_nd(dx_dy_dz)
+    {fx, fy, fz} = binary_fd(fd)
+    << nd::size(5), 0b000::size(3),
+       fx::size(8), fy::size(8), fz::size(8) >>
+  end
 
   defp ld_to_a_and_i({x, 0, 0}, offset), do: {0b01, x + offset}
   defp ld_to_a_and_i({0, y, 0}, offset), do: {0b10, y + offset}
@@ -77,6 +93,10 @@ defmodule Nanobots.Trace do
 
   defp dx_dy_dz_to_nd({dx, dy, dz}) do
     (dx + 1) * 9 + (dy + 1) * 3 + (dz + 1)
+  end
+
+  defp binary_fd({fx, fy, fz}) do
+    {fx + 30, fy + 30, fz + 30}
   end
 
   def close(%__MODULE__{device: device}), do: File.close(device)

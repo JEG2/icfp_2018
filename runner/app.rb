@@ -14,7 +14,7 @@ end
 
 chunked_assemblies.each do |group|
   group.map do |location, acc|
-    Thread.new { puts `#{File.expand_path("../nanobots/nanobots", __dir__)} #{location}` }
+    Thread.new { puts %x(#{File.expand_path("../nanobots/nanobots", __dir__)} #{location}) }
   end.each { |thread| thread.join }
 end
 

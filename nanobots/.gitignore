@@ -24,3 +24,4 @@ nanobots-*.tar
 
 # Ignore executable
 nanobots
+!nanobots/

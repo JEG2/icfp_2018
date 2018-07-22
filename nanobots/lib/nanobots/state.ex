@@ -54,8 +54,6 @@ defmodule Nanobots.State do
       state.bots
       |> Enum.zip(commands)
       |> Enum.reduce(state, fn {bot, command}, s ->
-      command
-      |> IO.inspect
         apply_command(s, bot, command)
       end)
 

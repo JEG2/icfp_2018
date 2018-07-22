@@ -1,6 +1,6 @@
 defmodule Nanobots.CLI do
   def main([path]) when is_binary(path) do
-    main([path, "StepUp"])
+    main([path, "Grounder"])
   end
   def main([path, strategy]) when is_binary(path) and is_binary(strategy) do
     strategy =

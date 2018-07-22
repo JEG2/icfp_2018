@@ -90,7 +90,7 @@ defmodule Nanobots.Strategies.Grounder do
         |> MapSet.delete(safe)
         |> MapSet.union(MapSet.new(newly_grounded))
       new_layer =
-        memory.new_grounded
+        new_grounded
         |> Enum.map(fn {_x, y, _z} -> y end)
         |> Enum.uniq
         |> Enum.min(fn -> nil end)

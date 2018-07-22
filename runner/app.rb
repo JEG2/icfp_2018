@@ -7,9 +7,10 @@ assemble_problems = problems.select { |name| name =~ /tgt\.mdl/ }
 chunked_assemblies = assemble_problems.each_slice(8)
 
 Dir.chdir(File.expand_path("../nanobots", __dir__)) do
+  `mix escript.build`
   chunked_assemblies.each do |group|
     group.map do |location, acc|
-      Thread.new { puts `mix run -e 'System.argv |> hd |> Nanobots.Solver.new(Nanobots.Strategies.StepUp) |> Nanobots.Solver.solve' #{location}` }
+      Thread.new { puts `./nanobots #{location}` }
     end.each { |thread| thread.join }
   end
 end

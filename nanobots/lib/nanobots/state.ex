@@ -1,5 +1,5 @@
 defmodule Nanobots.State do
-  alias Nanobots.{Bot, Coord, Model, Trace}
+  alias Nanobots.{Bot, Coord, Model, Trace, ReverseTrace}
   alias Nanobots.Commands.{
     Halt, Wait, Flip, SMove, LMove, Fill, GFill, Void, GVoid,
     Fission, FusionP, FusionS
@@ -10,6 +10,7 @@ defmodule Nanobots.State do
             matrix: nil,
             model: nil,
             bots: [%Bot{bid: 1, pos: {0, 0, 0}, seeds: Enum.to_list(2..40)}],
+            tracer: nil,
             trace: nil,
             problem: nil
 
@@ -19,16 +20,16 @@ defmodule Nanobots.State do
          end )
 
   def from_model(path) do
-    {model, matrix, problem} =
+    {model, matrix, problem, tracer} =
       case path |> Path.basename |> String.slice(0..1) do
         "FA" ->
           target = Model.from_file(path)
           empty = %Model{target | matrix: MapSet.new}
-          {target, empty, :assemble}
+          {target, empty, :assemble, Trace}
         "FD" ->
-          src = Model.from_file(path)
-          empty = %Model{src | matrix: MapSet.new}
-          {empty, src, :disassemble}
+          target = Model.from_file(path)
+          empty = %Model{target | matrix: MapSet.new}
+          {target, empty, :assemble, ReverseTrace}
         "FR" ->
           {src_path, tgt_path} =
             if String.contains?(path, "_src") do
@@ -38,13 +39,19 @@ defmodule Nanobots.State do
             end
           src = Model.from_file(src_path)
           tgt = Model.from_file(tgt_path)
-          {tgt, src, :reassemble}
+          {tgt, src, :reassemble, Trace}
       end
     trace =
       path
       |> String.replace(~r{\.mdl\z}, ".nbt")
-      |> Trace.new
-    %__MODULE__{matrix: matrix, model: model, trace: trace, problem: problem}
+      |> tracer.new
+    %__MODULE__{
+      matrix: matrix,
+      model: model,
+      tracer: tracer,
+      trace: trace,
+      problem: problem
+    }
   end
 
   def apply(state, commands) do
@@ -57,14 +64,15 @@ defmodule Nanobots.State do
         apply_command(s, bot, command)
       end)
 
-    Trace.record_timestep(state.trace, commands)
+    new_trace = state.tracer.record_timestep(state.trace, commands)
 
     if end?(new_state) do
-      Trace.close(state.trace)
+      state.tracer.close(new_trace)
     end
     %{
       new_state |
-      energy: new_state.energy + calculate_harmonics_energy(state)
+      energy: new_state.energy + calculate_harmonics_energy(state),
+      trace: new_trace
     }
   end
 

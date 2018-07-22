@@ -1,6 +1,7 @@
 defmodule Nanobots.Trace do
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, Void, GFill, GVoid, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, Void, GFill, GVoid,
+    Fission, FusionP, FusionS
   }
 
   defstruct ~w[device]a
@@ -30,14 +31,15 @@ defmodule Nanobots.Trace do
 
   def new(path), do: %__MODULE__{device: File.open!(path, ~w[write]a)}
 
-  def record_timestep(%__MODULE__{device: device}, commands)
+  def record_timestep(%__MODULE__{device: device} = trace, commands)
   when is_list(commands) do
     Enum.each(commands, fn command ->
       encoded = encode_command(command)
       IO.binwrite(device, encoded)
     end)
+    trace
   end
-  def record_timestep(_trace, _commands), do: nil
+  def record_timestep(trace, _commands), do: trace
 
   defp encode_command(%Halt{ }), do: <<0b11111111>>
   defp encode_command(%Wait{ }), do: <<0b11111110>>

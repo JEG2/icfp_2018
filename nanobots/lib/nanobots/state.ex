@@ -59,15 +59,11 @@ defmodule Nanobots.State do
 
     Trace.record_timestep(state.trace, commands)
 
-    if end?(new_state) do
-      Trace.close(state.trace)
-      new_state
-    else
-      %{
-        new_state |
-        energy: new_state.energy + calculate_harmonics_energy(state)
-      }
-    end
+    Trace.close(state.trace)
+    %{
+      new_state |
+      energy: new_state.energy + calculate_harmonics_energy(state)
+    }
   end
 
   def validate_commands(state, commands) do

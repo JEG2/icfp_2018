@@ -108,8 +108,9 @@ defmodule Nanobots.Strategies.Skaters do
     pad_with_waits([%Wait{} | m1], m2)
   end
 
-  def find_next_line(state, starting_point) do
-    find_longest_possible_continuous_line(state, starting_point)
+  def find_next_line(state, maybe_start_point) do
+    well_actually_start_point = find_leftmost_possible_start_point(state, maybe_start_point)
+    find_longest_possible_continuous_line(state, well_actually_start_point)
   end
 
   def find_start_of_next_line(state, {x, y, z}) do
@@ -181,5 +182,20 @@ defmodule Nanobots.Strategies.Skaters do
       {x, y, z + 1},
       {x, y, z - 1},
     ] |> Enum.filter(fn point -> needs_to_be_filled?(state, point) end)
+  end
+
+  def find_leftmost_possible_start_point(state, maybe_start_point) do
+    find_leftmost_possible_start_point(state, maybe_start_point, 0)
+  end
+  def find_leftmost_possible_start_point(state, {x,y,z}, count) when count < @max_fill do
+    maybe_next = {x-1, y, z}
+    if needs_to_be_filled?(state, maybe_next) do
+      find_leftmost_possible_start_point(state, maybe_next, count + 1)
+    else
+      {x,y,z}
+    end
+  end
+  def find_leftmost_possible_start_point(_state, point, _count) do
+    point
   end
 end

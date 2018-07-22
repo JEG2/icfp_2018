@@ -8,9 +8,10 @@ chunked_assemblies = assemble_problems.each_slice(8)
 
 Dir.chdir(File.expand_path("../nanobots", __dir__)) do
   `mix escript.build`
-  chunked_assemblies.each do |group|
-    group.map do |location, acc|
-      Thread.new { puts `./nanobots #{location}` }
-    end.each { |thread| thread.join }
-  end
+end
+
+chunked_assemblies.each do |group|
+  group.map do |location, acc|
+    Thread.new { puts `#{File.expand_path("../nanobots/nanobots", __dir__)} #{location}` }
+  end.each { |thread| thread.join }
 end

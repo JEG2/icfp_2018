@@ -35,6 +35,11 @@ defmodule Nanobots.Commands do
       }
     end
 
+    def calculate_volatiles({x, y, z}, {dx, dy, dz})
+    when dx < 0 or dy < 0 or dz < 0 do
+      finish = {x + dx, y + dy, z + dz}
+      calculate_volatile(finish, {-dx, -dy, -dz}, [finish])
+    end
     def calculate_volatiles(start, difference) do
       calculate_volatile(start, difference, [start])
     end

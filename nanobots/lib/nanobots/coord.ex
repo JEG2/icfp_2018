@@ -45,7 +45,7 @@ defmodule Nanobots.Coord do
   end
 
   def to_d({src_x, src_y, src_z}, {dst_x, dst_y, dst_z}) do
-    {abs(dst_x - src_x), abs(dst_y - src_y), abs(dst_z - src_z)}
+    {dst_x - src_x, dst_y - src_y, dst_z - src_z}
   end
 
   def clen({x, y, z}) do

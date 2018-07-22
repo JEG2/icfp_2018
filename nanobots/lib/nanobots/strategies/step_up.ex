@@ -1,6 +1,6 @@
 defmodule Nanobots.Strategies.StepUp do
   alias Nanobots.{Coord, Model, Pathfinder}
-  alias Nanobots.Commands.{Halt, LMove, Fill}
+  alias Nanobots.Commands.{Halt, Fill}
 
   @behaviour Nanobots.Strategy
 
@@ -27,21 +27,16 @@ defmodule Nanobots.Strategies.StepUp do
       near_goal = Coord.near(goal, state.matrix.resolution)
       fill_from = Coord.closest(me.pos, near_goal)
       path = Pathfinder.path(me.pos, fill_from, state.matrix, [ ])
+      step = Pathfinder.path(
+        fill_from,
+        {elem(goal, 0), elem(goal, 1) + 1, elem(goal, 2)},
+        %Model{state.matrix | matrix: MapSet.put(state.matrix.matrix, goal)},
+        [ ]
+      )
       move_queue =
-        Pathfinder.to_moves(path) ++
-          [
-            %Fill{nd: Coord.to_d(fill_from, goal)},
-            %LMove{
-              sld1: {0, 1, 0},
-              sld2: Coord.to_d(
-                {
-                  elem(fill_from, 0),
-                  elem(fill_from, 1) + 1,
-                  elem(fill_from, 2)},
-                {elem(goal, 0), elem(goal, 1) + 1, elem(goal, 2)}
-              )
-            }
-          ]
+        Pathfinder.to_moves(me, path) ++
+          [Fill.from_bot(me, Coord.to_d(fill_from, goal))] ++
+          Pathfinder.to_moves(me, step)
       {
         [hd(move_queue)],
         Map.merge(
@@ -66,7 +61,7 @@ defmodule Nanobots.Strategies.StepUp do
   def go_home(state, memory) do
     me = hd(state.bots)
     path = Pathfinder.path(me.pos, {0, 0, 0}, state.matrix, [ ])
-    move_queue = Pathfinder.to_moves(path) ++ [%Halt{ }]
+    move_queue = Pathfinder.to_moves(me, path) ++ [Halt.from_bot(me)]
     {[hd(move_queue)], Map.put(memory, :move_queue, tl(move_queue))}
   end
 end

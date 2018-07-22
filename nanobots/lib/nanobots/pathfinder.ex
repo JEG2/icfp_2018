@@ -1,5 +1,5 @@
 defmodule Nanobots.Pathfinder do
-  alias Nanobots.Coord
+  alias Nanobots.{Bot, Coord}
   alias Nanobots.Commands.SMove
 
   def path(to, to, _matrix, _commands) do
@@ -33,12 +33,14 @@ defmodule Nanobots.Pathfinder do
     end
   end
 
-  def to_moves(voxels) when is_list(voxels) and length(voxels) < 2 do
+  def to_moves(_bot, voxels) when is_list(voxels) and length(voxels) < 2 do
     [ ]
   end
-  def to_moves(voxels) do
+  def to_moves(%Bot{ } = bot, voxels) do
     voxels
     |> Enum.chunk_every(2, 1, :discard)
-    |> Enum.map(fn [from, to] -> %SMove{lld: Coord.to_d(from, to)} end)
+    |> Enum.map(fn [from, to] ->
+      SMove.from_bot(%Bot{bot | pos: from}, Coord.to_d(from, to))
+    end)
   end
 end

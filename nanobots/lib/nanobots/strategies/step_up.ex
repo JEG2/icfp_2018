@@ -5,6 +5,10 @@ defmodule Nanobots.Strategies.StepUp do
   @behaviour Nanobots.Strategy
 
   def move(state, memory) do
+    unless state.problem == :assemble do
+      raise "Problem type mismatch"
+    end
+
     move_queue = Map.get(memory, :move_queue, [ ])
     if move_queue != [ ] do
       {[hd(move_queue)], Map.put(memory, :move_queue, tl(move_queue))}

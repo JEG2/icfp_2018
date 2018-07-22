@@ -1,29 +1,50 @@
 defmodule Nanobots.State do
   alias Nanobots.{Bot, Coord, Model, Trace}
   alias Nanobots.Commands.{
-    Halt, Wait, Flip, SMove, LMove, Fill, GFill, Void, GVoid, Fission, FusionP, FusionS
+    Halt, Wait, Flip, SMove, LMove, Fill, GFill, Void, GVoid,
+    Fission, FusionP, FusionS
   }
 
   defstruct energy: 0,
             harmonics: :low,
             matrix: nil,
             model: nil,
-            bots: [%Bot{bid: 1, pos: {0, 0, 0}, seeds: Enum.to_list(2..20)}],
-            trace: nil
+            bots: [%Bot{bid: 1, pos: {0, 0, 0}, seeds: Enum.to_list(2..40)}],
+            trace: nil,
+            problem: nil
 
   @nds ( for x <- -1..1, y <- -1..1, z <- -1..1,
              abs(x) + abs(y) + abs(z) in [1, 2] do
-               {x, y, z}
+           {x, y, z}
          end )
 
   def from_model(path) do
-    model = Model.from_file(path)
-    matrix = %Model{model | matrix: MapSet.new}
+    {model, matrix, problem} =
+      case path |> Path.basename |> String.slice(0..1) do
+        "FA" ->
+          target = Model.from_file(path)
+          empty = %Model{target | matrix: MapSet.new}
+          {target, empty, :assemble}
+        "FD" ->
+          src = Model.from_file(path)
+          empty = %Model{src | matrix: MapSet.new}
+          {empty, src, :disassemble}
+        "FR" ->
+          {src_path, tgt_path} =
+            if String.contains?(path, "_src") do
+              {path, String.replace(path, "_src", "_tgt")}
+            else
+              {String.replace(path, "_tgt", "_src"), path}
+            end
+          src = Model.from_file(src_path)
+          tgt = Model.from_file(tgt_path)
+          {tgt, src, :reassemble}
+      end
     trace =
       path
       |> String.replace(~r{\.mdl\z}, ".nbt")
       |> Trace.new
-    %__MODULE__{matrix: matrix, model: model, trace: trace}
+    %__MODULE__{matrix: matrix, model: model, trace: trace, problem: problem}
   end
 
   def apply(state, commands) do

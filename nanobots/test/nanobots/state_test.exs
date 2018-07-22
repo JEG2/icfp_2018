@@ -228,7 +228,7 @@ defmodule Nanobots.StateTest do
 
       assert bot1.bid == 1
       assert bot1.pos == {0,0,0}
-      assert bot1.seeds == [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+      assert bot1.seeds == Enum.to_list(8..40)
 
       assert bot2.bid == 2
       assert bot2.pos == {1,0,0}

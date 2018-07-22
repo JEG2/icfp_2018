@@ -12,7 +12,7 @@ defmodule Nanobots.Solver do
       generate_timestep(solver, strategy_memory)
     new_state = State.apply(state, commands)
     if State.end?(new_state) do
-      IO.puts new_state.energy
+      new_state.energy
     else
       solve(%__MODULE__{solver | state: new_state}, new_strategy_memory)
     end

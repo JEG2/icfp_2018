@@ -44,6 +44,18 @@ defmodule Nanobots.Coord do
     |> Enum.filter(&valid?(&1, resolution))
   end
 
+  def adjacent({x, y, z}, resolution) do
+    [
+      {x - 1, y    , z    },
+      {x    , y - 1, z    },
+      {x    , y    , z - 1},
+      {x    , y    , z + 1},
+      {x    , y + 1, z    },
+      {x + 1, y    , z    }
+    ]
+    |> Enum.filter(&valid?(&1, resolution))
+  end
+
   def to_d({src_x, src_y, src_z}, {dst_x, dst_y, dst_z}) do
     {dst_x - src_x, dst_y - src_y, dst_z - src_z}
   end

@@ -54,12 +54,16 @@ defmodule Nanobots.State do
       state.bots
       |> Enum.zip(commands)
       |> Enum.reduce(state, fn {bot, command}, s ->
+      command
+      |> IO.inspect
         apply_command(s, bot, command)
       end)
 
     Trace.record_timestep(state.trace, commands)
 
-    Trace.close(state.trace)
+    if end?(new_state) do
+      Trace.close(state.trace)
+    end
     %{
       new_state |
       energy: new_state.energy + calculate_harmonics_energy(state)

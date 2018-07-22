@@ -9,26 +9,35 @@ defmodule Nanobots.Pathfinder do
     unavailable = Enum.reduce(commands, MapSet.new, fn command, combined ->
       MapSet.union(combined, command.volatiles)
     end)
-    walk_path(matrix, [[from]], unavailable, to)
+    {:ok, seen} = Agent.start_link(fn -> MapSet.new([from]) end)
+    walk_path(matrix, [[from]], unavailable, to, seen)
   end
 
-  defp walk_path(_matrix, [ ], _unavailable, _to), do: nil
+  defp walk_path(_matrix, [ ], _unavailable, _to, _seen), do: nil
   defp walk_path(
     matrix,
     [[current | _voxels] = path | paths],
     unavailable,
-    to
+    to,
+    seen
   ) do
-    steps = current |> Coord.moves(matrix, unavailable)
+    steps =
+      current
+      |> Coord.moves(matrix, unavailable)
+      |> Enum.reject(fn move ->
+        Agent.get(seen, fn s -> MapSet.member?(s, move) end)
+      end)
     if Enum.member?(steps, to) do
       [to | path] |> Enum.reverse
     else
       new_paths = steps |> Enum.map(fn step -> [step | path] end)
+      Agent.update(seen, fn s -> steps |> MapSet.new |> MapSet.union(s) end)
       walk_path(
         matrix,
         paths ++ new_paths,
         MapSet.union(unavailable, MapSet.new(steps)),
-        to
+        to,
+        seen
       )
     end
   end

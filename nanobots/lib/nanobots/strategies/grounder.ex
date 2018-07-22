@@ -1,6 +1,6 @@
 defmodule Nanobots.Strategies.Grounder do
-  alias Nanobots.{Coord, Model, Pathfinder}
-  alias Nanobots.Commands.{Halt, Fill}
+  alias Nanobots.{Bot, Coord, Model, Pathfinder}
+  alias Nanobots.Commands.{Halt, Fill, SMove, Void}
 
   @behaviour Nanobots.Strategy
 
@@ -55,7 +55,18 @@ defmodule Nanobots.Strategies.Grounder do
         end)
         |> hd
       path = Pathfinder.path(me.pos, build_from, state.matrix, [ ])
-      move_queue = Pathfinder.to_moves(me, path)
+      move_queue =
+        if path do
+          Pathfinder.to_moves(me, path)
+        else
+          one_up = {elem(me.pos, 0), elem(me.pos, 1) + 1, elem(me.pos, 2)}
+          two_up = {elem(me.pos, 0), elem(me.pos, 1) + 2, elem(me.pos, 2)}
+          [
+            Void.from_bot(me, Coord.to_d(me.pos, one_up)),
+            SMove.from_bot(me, Coord.to_d(me.pos, two_up)),
+            Fill.from_bot(%Bot{me | pos: two_up}, Coord.to_d(two_up, one_up))
+          ]
+        end
       {
         [hd(move_queue)],
         memory
@@ -110,7 +121,21 @@ defmodule Nanobots.Strategies.Grounder do
   def go_home(state, memory) do
     me = hd(state.bots)
     path = Pathfinder.path(me.pos, {0, 0, 0}, state.matrix, [ ])
-    move_queue = Pathfinder.to_moves(me, path) ++ [Halt.from_bot(me)]
+    move_queue =
+      if path do
+        Pathfinder.to_moves(me, path) ++ [Halt.from_bot(me)]
+      else
+        one_up = {elem(me.pos, 0), elem(me.pos, 1) + 1, elem(me.pos, 2)}
+        two_up = {elem(me.pos, 0), elem(me.pos, 1) + 2, elem(me.pos, 2)}
+        escape_path = Pathfinder.path(two_up, {0, 0, 0}, state.matrix, [ ])
+        [
+          Void.from_bot(me, Coord.to_d(me.pos, one_up)),
+          SMove.from_bot(me, Coord.to_d(me.pos, two_up)),
+          Fill.from_bot(%Bot{me | pos: two_up}, Coord.to_d(two_up, one_up))
+        ] ++
+          Pathfinder.to_moves(me, escape_path) ++
+          [Halt.from_bot(me)]
+      end
     {[hd(move_queue)], Map.put(memory, :move_queue, tl(move_queue))}
   end
 end

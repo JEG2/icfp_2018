@@ -10,7 +10,9 @@ defmodule Nanobots.Pathfinder do
       MapSet.union(combined, command.volatiles)
     end)
     {:ok, seen} = Agent.start_link(fn -> MapSet.new([from]) end)
-    walk_path(matrix, [[from]], unavailable, to, seen)
+    path = walk_path(matrix, [[from]], unavailable, to, seen)
+    Agent.stop(seen)
+    path
   end
 
   defp walk_path(_matrix, [ ], _unavailable, _to, _seen), do: nil

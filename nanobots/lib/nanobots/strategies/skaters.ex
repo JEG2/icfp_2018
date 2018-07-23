@@ -12,10 +12,10 @@ defmodule Nanobots.Strategies.Skaters do
     new_memory = memory
                  |> Map.put(:phase, :move_for_fill)
                  |> Map.put(:move_queue, [])
-                 |> Map.put(:current_y, 0)
                  |> Map.put(:next_check, [find_start_of_next_line(state, {0,0,0})])
                  |> Map.put(:start_of_line, nil)
                  |> Map.put(:end_of_line, nil)
+                 |> Map.put(:next_level_start, nil)
     {[%Fission{nd: {1,0,0}, m: 0}], new_memory}
   end
   def move(_state, memory = %{move_queue: move_queue}) when length(move_queue) > 0 do
@@ -26,12 +26,18 @@ defmodule Nanobots.Strategies.Skaters do
     stephen_bot = List.last(state.bots)
     cleaned_next_check = clean_next_check(state, memory.next_check)
     if (cleaned_next_check == []) do
-      next_check = find_start_of_next_line(state, {0, memory.current_y + 1, 0})
-      move(state, %{memory | phase: :move_for_fill, current_y: memory.current_y + 1, next_check: [next_check]})
+      move(state, %{memory | phase: :move_for_fill, next_check: [memory.next_level_start]})
     else
       [starting_point | next_check] = cleaned_next_check
       next_line = find_next_line(state, starting_point)
       next_check = generate_next_check_points(state, next_line, next_check)
+      next_level_start = find_next_level_start(state, next_line)
+      IO.inspect(next_level_start)
+      new_memory = if next_level_start do
+                     %{memory | next_level_start: next_level_start}
+                   else
+                     memory
+                   end
       start_of_line = List.last(next_line) # yes last
       end_of_line = List.first(next_line) # yes first
       miki_goal = find_near_destination(state, next_line, start_of_line)
@@ -42,7 +48,7 @@ defmodule Nanobots.Strategies.Skaters do
       stephen_bot_moves = Pathfinder.to_moves(stephen_bot, stephen_bot_path)
       {miki_bot_moves, stephen_bot_moves} = pad_with_waits(miki_bot_moves, stephen_bot_moves)
       [next_moves | queued_moves] = Enum.zip(miki_bot_moves, stephen_bot_moves)
-      {Tuple.to_list(next_moves), %{memory |
+      {Tuple.to_list(next_moves), %{new_memory |
         move_queue: queued_moves,
         phase: :fill,
         start_of_line: start_of_line,
@@ -197,5 +203,13 @@ defmodule Nanobots.Strategies.Skaters do
   end
   def find_leftmost_possible_start_point(_state, point, _count) do
     point
+  end
+
+  def find_next_level_start(state, next_line) do
+    result = next_line |> Enum.find(fn {x,y,z} -> needs_to_be_filled?(state, {x,y+1,z}) end)
+    case result do
+      {a,b,c} -> {a, b+1, c}
+      _ -> nil
+    end
   end
 end

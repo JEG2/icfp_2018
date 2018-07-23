@@ -44,6 +44,9 @@ defmodule Nanobots.Pathfinder do
     end
   end
 
+  def to_moves(_bot, nil) do
+    []
+  end
   def to_moves(_bot, voxels) when is_list(voxels) and length(voxels) < 2 do
     [ ]
   end

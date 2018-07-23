@@ -72,6 +72,10 @@ defmodule Nanobots.Coord do
     0 < clen(fd) && clen(fd) <=30
   end
 
+  def valid_nd?(nd) do
+    nd in @nds
+  end
+
   def garea(start, near, far) when near in @nds do
     {nx, ny, nz} = calculate_cprime(start, near)
     {fx, fy, fz} = calculate_cprime({nx, ny, nz}, far)

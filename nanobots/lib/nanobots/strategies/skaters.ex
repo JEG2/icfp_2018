@@ -1,6 +1,6 @@
 defmodule Nanobots.Strategies.Skaters do
   alias Nanobots.{Coord, Model, Pathfinder}
-  alias Nanobots.Commands.{Halt, Wait, Fission, GFill, FusionP, FusionS}
+  alias Nanobots.Commands.{Halt, Wait, Fission, Fill, GFill, FusionP, FusionS}
 
   @behaviour Nanobots.Strategy
   @max_fill 30
@@ -10,9 +10,10 @@ defmodule Nanobots.Strategies.Skaters do
       raise "Problem type mismatch"
     end
     new_memory = memory
-                 |> Map.put(:phase, :move_for_fill)
+                 |> Map.put(:phase, :find_next_line)
                  |> Map.put(:move_queue, [])
                  |> Map.put(:next_check, [find_start_of_next_line(state, {0,0,0})])
+                 |> Map.put(:next_line, [])
                  |> Map.put(:start_of_line, nil)
                  |> Map.put(:end_of_line, nil)
                  |> Map.put(:next_level_start, nil)
@@ -21,15 +22,16 @@ defmodule Nanobots.Strategies.Skaters do
   def move(_state, memory = %{move_queue: move_queue}) when length(move_queue) > 0 do
     {Tuple.to_list(hd(move_queue)), %{memory | move_queue: tl(move_queue)}}
   end
-  def move(state, memory = %{phase: :move_for_fill}) do
-    miki_bot = List.first(state.bots)
-    stephen_bot = List.last(state.bots)
+
+  def move(state, memory = %{phase: :find_next_line}) do
     cleaned_next_check = clean_next_check(state, memory.next_check)
     if (cleaned_next_check == []) do
-      move(state, %{memory | phase: :move_for_fill, next_check: [memory.next_level_start]})
+      move(state, %{memory | phase: :find_next_line, next_check: [memory.next_level_start]})
     else
       [starting_point | next_check] = cleaned_next_check
       next_line = find_next_line(state, starting_point)
+      start_of_line = List.last(next_line) # yes last
+      end_of_line = List.first(next_line) # yes first
       next_check = generate_next_check_points(state, next_line, next_check)
       next_level_start = find_next_level_start(state, next_line)
       new_memory = if next_level_start do
@@ -37,23 +39,51 @@ defmodule Nanobots.Strategies.Skaters do
                    else
                      memory
                    end
-      start_of_line = List.last(next_line) # yes last
-      end_of_line = List.first(next_line) # yes first
-      miki_goal = find_near_destination(state, next_line, start_of_line)
-      stephen_goal = find_near_destination(state, next_line, end_of_line)
-      miki_bot_path = Pathfinder.path(miki_bot.pos, miki_goal, state.matrix, [])
+                   move(state, %{new_memory |
+                     phase: :move_for_fill,
+                     next_line: next_line,
+                     start_of_line: start_of_line,
+                     end_of_line: end_of_line,
+                     next_check: next_check
+                   })
+    end
+  end
+  def move(state, memory = %{phase: :move_for_fill}) do
+    miki_bot = List.first(state.bots)
+    stephen_bot = List.last(state.bots)
+    start_of_line = memory.start_of_line
+    end_of_line = memory.end_of_line
+    cleaned_next_check = clean_next_check(state, memory.next_check)
+    next_line = memory.next_line
+    miki_goal = find_near_destination(state, next_line, start_of_line, nil)
+    stephen_goal = find_near_destination(state, next_line, end_of_line, miki_goal)
+    if bots_are_in_position?(miki_bot, stephen_bot, memory) do
+      move(state, %{memory | phase: :fill})
+    else
+      fake_miki_wait = Wait.from_bot(miki_bot)
+      fake_stephen_wait = Wait.from_bot(stephen_bot)
+      miki_bot_path = Pathfinder.path(miki_bot.pos, miki_goal, state.matrix, [fake_stephen_wait])
       miki_bot_moves = Pathfinder.to_moves(miki_bot, miki_bot_path)
-      stephen_bot_path = Pathfinder.path(stephen_bot.pos, stephen_goal, state.matrix, miki_bot_moves)
+      stephen_avoid = List.first(miki_bot_moves) || fake_miki_wait
+      stephen_bot_path = Pathfinder.path(stephen_bot.pos, stephen_goal, state.matrix, [stephen_avoid])
       stephen_bot_moves = Pathfinder.to_moves(stephen_bot, stephen_bot_path)
       {miki_bot_moves, stephen_bot_moves} = pad_with_waits(miki_bot_moves, stephen_bot_moves)
+      # IO.puts("-------- goals")
+      # IO.puts("miki pos: #{inspect miki_bot.pos}, miki goal: #{inspect miki_goal}")
+      # IO.puts("stephen pos: #{inspect stephen_bot.pos}, stephen goal: #{inspect stephen_goal}")
+      # IO.inspect(next_line)
+      # IO.puts("-------- moves")
+      # IO.inspect(miki_bot_moves)
+      # IO.inspect(stephen_bot_moves)
       [next_moves | queued_moves] = Enum.zip(miki_bot_moves, stephen_bot_moves)
-      {Tuple.to_list(next_moves), %{new_memory |
-        move_queue: queued_moves,
-        phase: :fill,
-        start_of_line: start_of_line,
-        end_of_line: end_of_line,
-        next_check: next_check
-      }}
+      {
+        [hd(miki_bot_moves), hd(stephen_bot_moves)],
+        %{memory |
+          move_queue: [],
+          start_of_line: start_of_line,
+          end_of_line: end_of_line,
+        }
+      }
     end
   end
   def move(state, memory = %{phase: :fill}) do
@@ -65,14 +95,18 @@ defmodule Nanobots.Strategies.Skaters do
     stephen_nd = Coord.difference(stephen_bot.pos, memory.end_of_line)
     stephen_fd = Coord.difference(memory.end_of_line, memory.start_of_line)
 
-    next_moves = [%GFill{nd: miki_nd, fd: miki_fd}, %GFill{nd: stephen_nd, fd: stephen_fd}]
+    if (length(memory.next_line) == 1) do
+      next_moves = [%Fill{nd: miki_nd}, %Wait{}]
+    else
+      next_moves = [%GFill{nd: miki_nd, fd: miki_fd}, %GFill{nd: stephen_nd, fd: stephen_fd}]
+    end
     {next_moves, %{memory | phase: :check_for_done}}
   end
   def move(state, memory = %{phase: :check_for_done}) do
     if model_done?(state) do
       move(state, %{memory | phase: :prep_for_fusion})
     else
-      move(state, %{memory | phase: :move_for_fill})
+      move(state, %{memory | phase: :find_next_line})
     end
   end
   def move(state, memory = %{phase: :prep_for_fusion}) do
@@ -157,10 +191,11 @@ defmodule Nanobots.Strategies.Skaters do
     !Model.filled?(state.matrix, point)
   end
 
-  def find_near_destination(state, line, point) do
+  def find_near_destination(state, line, point, miki_destination) do
     possible_destinations = Coord.near(point, state.model.resolution)
     possible_destinations
     |> Enum.reject(fn destination -> destination in line end)
+    |> Enum.reject(fn destination -> destination == miki_destination end)
     |> Enum.find(fn destination -> !Model.filled?(state.matrix, destination) end)
   end
 
@@ -210,5 +245,11 @@ defmodule Nanobots.Strategies.Skaters do
       {a,b,c} -> {a, b+1, c}
       _ -> nil
     end
+  end
+
+  def bots_are_in_position?(miki, stephen, memory) do
+    miki_in_position = Coord.valid_nd?(Coord.difference(miki.pos, memory.start_of_line))
+    stephen_in_position = Coord.valid_nd?(Coord.difference(stephen.pos, memory.end_of_line))
+    miki_in_position && stephen_in_position && stephen.pos not in memory.next_line && miki.pos not in memory.next_line
   end
 end

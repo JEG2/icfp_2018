@@ -1,21 +1,7 @@
 # Nanobots
 
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `nanobots` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:nanobots, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/nanobots](https://hexdocs.pm/nanobots).
-
+Team Name:  The Double Spacers Period Space Space And Stephen
+Team E-mail Address:  james@graysoftinc.com
+Team Public ID:  0184
+Team Private ID:  158176a7a8d8410aac0d4846a7b4230c
+Timestamp:  2018-07-23T01:15:19Z

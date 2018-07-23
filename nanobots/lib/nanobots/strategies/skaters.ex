@@ -26,7 +26,11 @@ defmodule Nanobots.Strategies.Skaters do
   def move(state, memory = %{phase: :find_next_line}) do
     cleaned_next_check = clean_next_check(state, memory.next_check)
     if (cleaned_next_check == []) do
-      move(state, %{memory | phase: :find_next_line, next_check: [memory.next_level_start]})
+      if memory.next_level_start do
+        move(state, %{memory | phase: :find_next_line, next_check: [memory.next_level_start]})
+      else
+        move(state, %{memory | phase: :find_next_line, next_check: [find_start_of_next_line(state, {0,0,0})]})
+      end
     else
       [starting_point | next_check] = cleaned_next_check
       next_line = find_next_line(state, starting_point)

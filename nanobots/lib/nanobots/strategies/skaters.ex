@@ -32,7 +32,6 @@ defmodule Nanobots.Strategies.Skaters do
       next_line = find_next_line(state, starting_point)
       next_check = generate_next_check_points(state, next_line, next_check)
       next_level_start = find_next_level_start(state, next_line)
-      IO.inspect(next_level_start)
       new_memory = if next_level_start do
                      %{memory | next_level_start: next_level_start}
                    else
